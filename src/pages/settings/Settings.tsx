@@ -9,19 +9,16 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-interface Profile {
-  id: string;
-  username: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  created_at: string;
-}
+import { Profile } from "@/types/profile";
 
 interface LoginHistory {
   id: string;
   login_at: string;
-  user: Profile;
+  user: {
+    username: string | null;
+    first_name: string | null;
+    last_name: string | null;
+  };
 }
 
 export default function Settings() {
@@ -73,7 +70,7 @@ export default function Settings() {
     return new Date(date).toLocaleString();
   };
 
-  const getUserName = (profile: Profile) => {
+  const getUserName = (profile: { first_name: string | null; last_name: string | null; username: string | null }) => {
     if (profile.first_name && profile.last_name) {
       return `${profile.first_name} ${profile.last_name}`;
     }
