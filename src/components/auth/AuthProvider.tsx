@@ -4,9 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "@/lib/auth";
 import { toast } from "sonner";
-import { Tables } from "@/integrations/supabase/types";
-
-type Profile = Tables<"profiles">;
+import { Profile } from "@/integrations/supabase/types";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -43,9 +41,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
         .single();
 
       if (error) throw error;
