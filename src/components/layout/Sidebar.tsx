@@ -1,5 +1,7 @@
-import { FileEdit, Settings, List } from "lucide-react";
+import { FileEdit, Settings, List, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Sidebar as SidebarContainer,
   SidebarContent,
@@ -32,6 +34,16 @@ const menuItems = [
 export function Sidebar() {
   const navigate = useNavigate();
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success("Logged out successfully");
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast.error("Failed to log out");
+    }
+  };
+
   return (
     <>
       <SidebarContainer>
@@ -50,6 +62,12 @@ export function Sidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={handleLogout}>
+                    <LogOut className="w-5 h-5" />
+                    <span>Logout</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
