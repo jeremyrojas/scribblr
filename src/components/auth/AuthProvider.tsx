@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthContext, Profile } from "@/lib/auth";
+import { AuthContext } from "@/lib/auth";
 import { toast } from "sonner";
+import { Tables } from "@/integrations/supabase/types";
+
+type Profile = Tables<"profiles">;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
