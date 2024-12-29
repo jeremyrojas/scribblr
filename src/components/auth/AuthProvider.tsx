@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "@/lib/auth";
 import { toast } from "sonner";
-import { Profile } from "@/integrations/supabase/types";
+import { Profile } from "@/types/profile";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
