@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -6,27 +8,67 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-const MOCK_POSTS = [
-  {
-    id: 1,
-    title: "Getting Started with SCRIBBLR",
-    date: "2024-04-10",
-    status: "published",
-    author: "Admin",
-  },
-  {
-    id: 2,
-    title: "Draft Post Example",
-    date: "2024-04-11",
-    status: "draft",
-    author: "Admin",
-  },
-];
+interface Post {
+  id: string;
+  title: string;
+  status: string;
+  created_at: string;
+  published_at: string | null;
+  author: {
+    first_name: string;
+    last_name: string;
+  } | null;
+}
 
 export default function ManagePosts() {
   const navigate = useNavigate();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const fetchPosts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("posts")
+        .select(`
+          id,
+          title,
+          status,
+          created_at,
+          published_at,
+          author:profiles(first_name, last_name)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setPosts(data || []);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      toast.error("Failed to load posts");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (date: string | null) => {
+    if (!date) return "—";
+    return new Date(date).toLocaleDateString();
+  };
+
+  const getAuthorName = (author: Post["author"]) => {
+    if (!author) return "Unknown";
+    return `${author.first_name || ""} ${author.last_name || ""}`.trim() || "Unknown";
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -42,14 +84,14 @@ export default function ManagePosts() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {MOCK_POSTS.map((post) => (
+          {posts.map((post) => (
             <TableRow
               key={post.id}
               className="cursor-pointer hover:bg-muted/50"
               onClick={() => navigate(`/posts/${post.id}`)}
             >
               <TableCell className="font-medium">{post.title}</TableCell>
-              <TableCell>{post.date}</TableCell>
+              <TableCell>{formatDate(post.published_at || post.created_at)}</TableCell>
               <TableCell>
                 <span
                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -61,7 +103,7 @@ export default function ManagePosts() {
                   {post.status}
                 </span>
               </TableCell>
-              <TableCell>{post.author}</TableCell>
+              <TableCell>{getAuthorName(post.author)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
