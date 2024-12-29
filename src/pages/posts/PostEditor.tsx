@@ -15,6 +15,7 @@ export default function PostEditor() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [post, setPost] = useState({
     title: "",
     content: "",
@@ -29,6 +30,7 @@ export default function PostEditor() {
   }, [id]);
 
   const loadPost = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("posts")
@@ -48,6 +50,8 @@ export default function PostEditor() {
     } catch (error) {
       console.error("Error loading post:", error);
       toast.error("Failed to load post");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -60,8 +64,11 @@ export default function PostEditor() {
   };
 
   const savePost = async (status: string) => {
-    if (!user) return;
-    setLoading(true);
+    if (!user) {
+      toast.error("You must be logged in to save posts");
+      return;
+    }
+    setSaving(true);
 
     try {
       const postData = {
@@ -95,7 +102,7 @@ export default function PostEditor() {
       console.error("Error saving post:", error);
       toast.error("Failed to save post");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -117,11 +124,20 @@ export default function PostEditor() {
         .getPublicUrl(fileName);
 
       setPost(prev => ({ ...prev, photo_url: publicUrl }));
+      toast.success("Image uploaded successfully");
     } catch (error) {
       console.error("Error uploading image:", error);
       toast.error("Failed to upload image");
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -131,13 +147,13 @@ export default function PostEditor() {
         </h1>
         <div className="space-x-4">
           {post.status === "draft" && (
-            <Button onClick={handlePublish} variant="outline" disabled={loading}>
+            <Button onClick={handlePublish} variant="outline" disabled={saving}>
               Publish
             </Button>
           )}
-          <Button onClick={handleSave} disabled={loading}>
+          <Button onClick={handleSave} disabled={saving}>
             <Save className="mr-2 h-4 w-4" />
-            Save
+            {saving ? "Saving..." : "Save"}
           </Button>
         </div>
       </div>

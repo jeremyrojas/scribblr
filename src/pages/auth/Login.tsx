@@ -25,11 +25,8 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <div className="relative flex-1 hidden h-full lg:block">
-        <div className="absolute inset-0 bg-muted" />
-      </div>
-      <div className="flex flex-col justify-center flex-1 px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
-        <div className="w-full max-w-sm mx-auto lg:w-96">
+      <div className="flex flex-col justify-center w-full px-4 py-12">
+        <div className="w-full max-w-sm mx-auto">
           <div className="flex flex-col space-y-4">
             <h1 className="text-2xl font-semibold tracking-tight">Welcome to Scribblr</h1>
             <p className="text-sm text-muted-foreground">

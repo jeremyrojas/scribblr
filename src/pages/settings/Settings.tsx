@@ -27,42 +27,36 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchProfiles(), fetchLoginHistory()]).finally(() => 
-      setLoading(false)
-    );
+    fetchData();
   }, []);
 
-  const fetchProfiles = async () => {
+  const fetchData = async () => {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const [profilesResponse, loginHistoryResponse] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("*")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("login_history")
+          .select(`
+            id,
+            login_at,
+            user:profiles(username, first_name, last_name)
+          `)
+          .order("login_at", { ascending: false }),
+      ]);
 
-      if (error) throw error;
-      setProfiles(data || []);
+      if (profilesResponse.error) throw profilesResponse.error;
+      if (loginHistoryResponse.error) throw loginHistoryResponse.error;
+
+      setProfiles(profilesResponse.data || []);
+      setLoginHistory(loginHistoryResponse.data || []);
     } catch (error) {
-      console.error("Error fetching profiles:", error);
-      toast.error("Failed to load user profiles");
-    }
-  };
-
-  const fetchLoginHistory = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("login_history")
-        .select(`
-          id,
-          login_at,
-          user:profiles(username, first_name, last_name)
-        `)
-        .order("login_at", { ascending: false });
-
-      if (error) throw error;
-      setLoginHistory(data || []);
-    } catch (error) {
-      console.error("Error fetching login history:", error);
-      toast.error("Failed to load login history");
+      console.error("Error fetching data:", error);
+      toast.error("Failed to load settings data");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,7 +72,11 @@ export default function Settings() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+      </div>
+    );
   }
 
   return (

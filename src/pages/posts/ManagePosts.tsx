@@ -18,8 +18,8 @@ interface Post {
   created_at: string;
   published_at: string | null;
   author: {
-    first_name: string;
-    last_name: string;
+    first_name: string | null;
+    last_name: string | null;
   } | null;
 }
 
@@ -67,7 +67,11 @@ export default function ManagePosts() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+      </div>
+    );
   }
 
   return (
