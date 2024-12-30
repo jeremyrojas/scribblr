@@ -25,15 +25,15 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <div className="flex flex-col justify-center w-full px-4 py-12">
-        <div className="w-full max-w-sm mx-auto">
+      <div className="flex flex-col justify-center flex-1">
+        <div className="mx-auto w-full max-w-sm px-8">
           <div className="flex flex-col space-y-4">
             <h1 className="text-2xl font-semibold tracking-tight">Welcome to Scribblr</h1>
             <p className="text-sm text-muted-foreground">
               Sign in to your account or create a new one
             </p>
           </div>
-          <div className="mt-10">
+          <div className="mt-8">
             <Auth
               supabaseClient={supabase}
               appearance={{
