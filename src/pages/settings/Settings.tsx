@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -10,6 +10,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Profile } from "@/types/profile";
+import { useQuery } from "@tanstack/react-query";
 
 interface LoginHistory {
   id: string;
@@ -21,44 +22,63 @@ interface LoginHistory {
   };
 }
 
+const fetchProfiles = async () => {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+};
+
+const fetchLoginHistory = async () => {
+  const { data, error } = await supabase
+    .from("login_history")
+    .select(`
+      id,
+      login_at,
+      user:profiles(username, first_name, last_name)
+    `)
+    .order("login_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+};
+
 export default function Settings() {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [loginHistory, setLoginHistory] = useState<LoginHistory[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { 
+    data: profiles, 
+    isLoading: isLoadingProfiles, 
+    error: profilesError 
+  } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: fetchProfiles,
+    staleTime: 1000 * 60,
+    retry: 2
+  });
+
+  const { 
+    data: loginHistory, 
+    isLoading: isLoadingHistory, 
+    error: historyError 
+  } = useQuery({
+    queryKey: ["loginHistory"],
+    queryFn: fetchLoginHistory,
+    staleTime: 1000 * 60,
+    retry: 2
+  });
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [profilesResponse, loginHistoryResponse] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("*")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("login_history")
-          .select(`
-            id,
-            login_at,
-            user:profiles(username, first_name, last_name)
-          `)
-          .order("login_at", { ascending: false }),
-      ]);
-
-      if (profilesResponse.error) throw profilesResponse.error;
-      if (loginHistoryResponse.error) throw loginHistoryResponse.error;
-
-      setProfiles(profilesResponse.data || []);
-      setLoginHistory(loginHistoryResponse.data || []);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error("Failed to load settings data");
-    } finally {
-      setLoading(false);
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+      toast.error("Failed to load profiles");
     }
-  };
+    if (historyError) {
+      console.error("Error fetching login history:", historyError);
+      toast.error("Failed to load login history");
+    }
+  }, [profilesError, historyError]);
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleString();
@@ -71,7 +91,7 @@ export default function Settings() {
     return profile.username || "Unknown";
   };
 
-  if (loading) {
+  if (isLoadingProfiles || isLoadingHistory) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
@@ -92,7 +112,7 @@ export default function Settings() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {profiles.map((profile) => (
+            {profiles?.map((profile: Profile) => (
               <TableRow key={profile.id}>
                 <TableCell className="font-medium">
                   {profile.username || "N/A"}
@@ -119,7 +139,7 @@ export default function Settings() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loginHistory.map((entry) => (
+            {loginHistory?.map((entry: LoginHistory) => (
               <TableRow key={entry.id}>
                 <TableCell className="font-medium">
                   {entry.user ? getUserName(entry.user) : "Unknown"}

@@ -8,11 +8,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
-  },
-  global: {
-    headers: {
-      'Access-Control-Allow-Origin': '*'
-    }
+    detectSessionInUrl: true,
+    storageKey: 'scribblr-auth',
+    storage: window.localStorage
   }
 });

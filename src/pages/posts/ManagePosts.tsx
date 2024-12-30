@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 
 interface Post {
   id: string;
@@ -23,38 +24,39 @@ interface Post {
   } | null;
 }
 
+const fetchPosts = async () => {
+  const { data, error } = await supabase
+    .from("posts")
+    .select(`
+      id,
+      title,
+      status,
+      created_at,
+      published_at,
+      author:profiles(first_name, last_name)
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+};
+
 export default function ManagePosts() {
   const navigate = useNavigate();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  const { data: posts, isLoading, error } = useQuery({
+    queryKey: ["posts"],
+    queryFn: fetchPosts,
+    staleTime: 1000 * 60, // Consider data fresh for 1 minute
+    retry: 2
+  });
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  const fetchPosts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("posts")
-        .select(`
-          id,
-          title,
-          status,
-          created_at,
-          published_at,
-          author:profiles(first_name, last_name)
-        `)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setPosts(data || []);
-    } catch (error) {
+    if (error) {
       console.error("Error fetching posts:", error);
       toast.error("Failed to load posts");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [error]);
 
   const formatDate = (date: string | null) => {
     if (!date) return "—";
@@ -66,7 +68,7 @@ export default function ManagePosts() {
     return `${author.first_name || ""} ${author.last_name || ""}`.trim() || "Unknown";
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
@@ -88,7 +90,7 @@ export default function ManagePosts() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {posts.map((post) => (
+          {posts?.map((post) => (
             <TableRow
               key={post.id}
               className="cursor-pointer hover:bg-muted/50"
