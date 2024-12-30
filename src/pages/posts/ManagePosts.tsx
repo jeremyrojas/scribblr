@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Table,
@@ -19,8 +19,7 @@ interface Post {
   created_at: string;
   published_at: string | null;
   author: {
-    first_name: string | null;
-    last_name: string | null;
+    username: string | null;
   } | null;
 }
 
@@ -33,7 +32,7 @@ const fetchPosts = async () => {
       status,
       created_at,
       published_at,
-      author:profiles(first_name, last_name)
+      author:profiles(username)
     `)
     .order("created_at", { ascending: false });
 
@@ -47,7 +46,7 @@ export default function ManagePosts() {
   const { data: posts, isLoading, error } = useQuery({
     queryKey: ["posts"],
     queryFn: fetchPosts,
-    staleTime: 1000 * 60, // Consider data fresh for 1 minute
+    staleTime: 1000 * 60,
     retry: 2
   });
 
@@ -64,8 +63,7 @@ export default function ManagePosts() {
   };
 
   const getAuthorName = (author: Post["author"]) => {
-    if (!author) return "Unknown";
-    return `${author.first_name || ""} ${author.last_name || ""}`.trim() || "Unknown";
+    return author?.username || "Unknown";
   };
 
   if (isLoading) {

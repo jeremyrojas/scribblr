@@ -9,8 +9,13 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Profile } from "@/types/profile";
 import { useQuery } from "@tanstack/react-query";
+
+interface Profile {
+  id: string;
+  username: string | null;
+  created_at: string;
+}
 
 interface LoginHistory {
   id: string;
