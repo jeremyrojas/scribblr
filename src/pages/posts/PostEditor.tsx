@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ImagePlus, Save } from "lucide-react";
+import { ImagePlus, Save, Link as LinkIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -28,6 +28,12 @@ export default function PostEditor() {
       loadPost();
     }
   }, [id]);
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/posts/view/${id}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Public link copied to clipboard");
+  };
 
   const loadPost = async () => {
     setLoading(true);
@@ -146,6 +152,12 @@ export default function PostEditor() {
           {id ? "Edit Post" : "Create New Post"}
         </h1>
         <div className="space-x-4">
+          {id && post.status === "published" && (
+            <Button onClick={handleCopyLink} variant="outline" size="sm">
+              <LinkIcon className="mr-2 h-4 w-4" />
+              Copy Public Link
+            </Button>
+          )}
           {post.status === "draft" && (
             <Button onClick={handlePublish} variant="outline" disabled={saving}>
               Publish

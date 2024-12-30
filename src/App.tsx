@@ -5,10 +5,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { AppLayout } from "./components/layout/AppLayout";
+import { PublicLayout } from "./components/layout/PublicLayout";
 import Index from "./pages/Index";
 import Login from "./pages/auth/Login";
 import PostEditor from "./pages/posts/PostEditor";
 import ManagePosts from "./pages/posts/ManagePosts";
+import PublicPost from "./pages/posts/PublicPost";
 import Settings from "./pages/settings/Settings";
 
 const queryClient = new QueryClient();
@@ -22,6 +24,11 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/posts/view/:id" element={
+              <PublicLayout>
+                <PublicPost />
+              </PublicLayout>
+            } />
             <Route
               path="/"
               element={
