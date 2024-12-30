@@ -17,8 +17,6 @@ interface LoginHistory {
   login_at: string;
   user: {
     username: string | null;
-    first_name: string | null;
-    last_name: string | null;
   };
 }
 
@@ -38,7 +36,7 @@ const fetchLoginHistory = async () => {
     .select(`
       id,
       login_at,
-      user:profiles(username, first_name, last_name)
+      user:profiles(username)
     `)
     .order("login_at", { ascending: false });
 
@@ -84,13 +82,6 @@ export default function Settings() {
     return new Date(date).toLocaleString();
   };
 
-  const getUserName = (profile: { first_name: string | null; last_name: string | null; username: string | null }) => {
-    if (profile.first_name && profile.last_name) {
-      return `${profile.first_name} ${profile.last_name}`;
-    }
-    return profile.username || "Unknown";
-  };
-
   if (isLoadingProfiles || isLoadingHistory) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -107,7 +98,6 @@ export default function Settings() {
           <TableHeader>
             <TableRow>
               <TableHead>Username</TableHead>
-              <TableHead>Name</TableHead>
               <TableHead>Date Created</TableHead>
             </TableRow>
           </TableHeader>
@@ -116,11 +106,6 @@ export default function Settings() {
               <TableRow key={profile.id}>
                 <TableCell className="font-medium">
                   {profile.username || "N/A"}
-                </TableCell>
-                <TableCell>
-                  {profile.first_name && profile.last_name
-                    ? `${profile.first_name} ${profile.last_name}`
-                    : "N/A"}
                 </TableCell>
                 <TableCell>{formatDate(profile.created_at)}</TableCell>
               </TableRow>
@@ -142,7 +127,7 @@ export default function Settings() {
             {loginHistory?.map((entry: LoginHistory) => (
               <TableRow key={entry.id}>
                 <TableCell className="font-medium">
-                  {entry.user ? getUserName(entry.user) : "Unknown"}
+                  {entry.user?.username || "N/A"}
                 </TableCell>
                 <TableCell>{formatDate(entry.login_at)}</TableCell>
               </TableRow>
