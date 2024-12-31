@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { AppLayout } from "./components/layout/AppLayout";
 import { PublicLayout } from "./components/layout/PublicLayout";
@@ -20,6 +20,7 @@ const queryClient = new QueryClient({
       staleTime: 1000 * 60,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
+      refetchInterval: false,
     },
   },
 });
@@ -32,8 +33,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            {/* Public routes */}
             <Route path="/login" element={<Login />} />
-            {/* Public routes for viewing posts */}
             <Route path="/posts/view/:id" element={
               <PublicLayout>
                 <PublicPost />
@@ -44,47 +45,16 @@ const App = () => (
                 <PublicPost />
               </PublicLayout>
             } />
+            
             {/* Protected admin routes */}
-            <Route
-              path="/"
-              element={
-                <AppLayout>
-                  <Index />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/posts/new"
-              element={
-                <AppLayout>
-                  <PostEditor />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/posts/edit/:id"
-              element={
-                <AppLayout>
-                  <PostEditor />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/posts"
-              element={
-                <AppLayout>
-                  <ManagePosts />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <AppLayout>
-                  <Settings />
-                </AppLayout>
-              }
-            />
+            <Route path="/" element={<AppLayout><Index /></AppLayout>} />
+            <Route path="/posts/new" element={<AppLayout><PostEditor /></AppLayout>} />
+            <Route path="/posts/edit/:id" element={<AppLayout><PostEditor /></AppLayout>} />
+            <Route path="/posts" element={<AppLayout><ManagePosts /></AppLayout>} />
+            <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+            
+            {/* Catch all route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>

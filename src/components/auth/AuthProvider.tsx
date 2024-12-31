@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "@/lib/auth";
 import { toast } from "sonner";
@@ -11,11 +11,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const fetchProfile = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      toast.error("Failed to fetch user profile");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Check active sessions
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -29,9 +47,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await fetchProfile(session.user.id);
         } else {
           setIsLoading(false);
+          // Only redirect to login if trying to access protected routes
+          const isPublicRoute = location.pathname.startsWith('/posts/') || location.pathname === '/login';
+          if (!isPublicRoute) {
+            navigate("/login", { replace: true });
+          }
         }
 
-        // Listen for changes on auth state
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
           console.log("Auth state changed:", event, session?.user?.id);
           
@@ -42,7 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             setProfile(null);
             setIsLoading(false);
-            navigate("/login");
+            // Only redirect to login if trying to access protected routes
+            const isPublicRoute = location.pathname.startsWith('/posts/') || location.pathname === '/login';
+            if (!isPublicRoute) {
+              navigate("/login", { replace: true });
+            }
           }
         });
 
@@ -57,26 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initializeAuth();
-  }, [navigate]);
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-      
-      setProfile(data);
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      toast.error("Failed to fetch user profile");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [navigate, location.pathname, fetchProfile]);
 
   return (
     <AuthContext.Provider value={{ user, profile, isLoading }}>

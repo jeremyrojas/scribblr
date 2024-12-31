@@ -1,9 +1,14 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Edit } from "lucide-react";
 
 export default function PublicPost() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const { data: post, isLoading } = useQuery({
     queryKey: ["public-post", id],
@@ -15,12 +20,12 @@ export default function PublicPost() {
           author:profiles(username)
         `)
         .eq("id", id)
-        .eq("status", "published")
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
     },
+    retry: false,
   });
 
   if (isLoading) {
@@ -40,8 +45,22 @@ export default function PublicPost() {
     );
   }
 
+  const canEdit = user && post.author_id === user.id;
+
   return (
     <article className="prose prose-slate mx-auto">
+      {canEdit && (
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/posts/edit/${post.id}`)}
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Edit Post
+          </Button>
+        </div>
+      )}
       {post.photo_url && (
         <img
           src={post.photo_url}
