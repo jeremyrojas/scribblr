@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { AppLayout } from "./components/layout/AppLayout";
-import { PublicLayout } from "./components/layout/PublicLayout";
 import Index from "./pages/Index";
 import Login from "./pages/auth/Login";
 import PostEditor from "./pages/posts/PostEditor";
@@ -33,28 +32,19 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Public routes */}
             <Route path="/login" element={<Login />} />
-            <Route path="/posts/view/:id" element={
-              <PublicLayout>
-                <PublicPost />
-              </PublicLayout>
-            } />
-            <Route path="/posts/:id" element={
-              <PublicLayout>
-                <PublicPost />
-              </PublicLayout>
-            } />
             
-            {/* Protected admin routes */}
-            <Route path="/" element={<AppLayout><Index /></AppLayout>} />
-            <Route path="/posts/new" element={<AppLayout><PostEditor /></AppLayout>} />
-            <Route path="/posts/edit/:id" element={<AppLayout><PostEditor /></AppLayout>} />
-            <Route path="/posts" element={<AppLayout><ManagePosts /></AppLayout>} />
-            <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
-            
-            {/* Catch all route */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* All other routes use AppLayout */}
+            <Route element={<AppLayout>}>
+              <Route path="/" element={<Index />} />
+              <Route path="/posts/new" element={<PostEditor />} />
+              <Route path="/posts/edit/:id" element={<PostEditor />} />
+              <Route path="/posts" element={<ManagePosts />} />
+              <Route path="/posts/:id" element={<PublicPost />} />
+              <Route path="/posts/view/:id" element={<PublicPost />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
           </Routes>
         </AuthProvider>
       </BrowserRouter>

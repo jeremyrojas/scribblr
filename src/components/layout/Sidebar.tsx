@@ -1,7 +1,8 @@
-import { FileEdit, Settings, List, LogOut } from "lucide-react";
+import { FileEdit, Settings, List, LogOut, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSidebar } from "@/components/ui/sidebar";
 import {
   Sidebar as SidebarContainer,
   SidebarContent,
@@ -12,6 +13,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 const menuItems = [
   {
@@ -33,6 +35,7 @@ const menuItems = [
 
 export function Sidebar() {
   const navigate = useNavigate();
+  const { state, toggleSidebar } = useSidebar();
 
   const handleLogout = async () => {
     try {
@@ -46,8 +49,20 @@ export function Sidebar() {
 
   return (
     <SidebarContainer>
-      <div className="flex items-center h-16 px-4 border-b">
+      <div className="flex items-center justify-between h-16 px-4 border-b">
         <h1 className="text-xl font-semibold tracking-tight">SCRIBBLR</h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={toggleSidebar}
+        >
+          {state === "expanded" ? (
+            <ChevronsLeft className="h-4 w-4" />
+          ) : (
+            <ChevronsRight className="h-4 w-4" />
+          )}
+        </Button>
       </div>
       <SidebarContent>
         <SidebarGroup>

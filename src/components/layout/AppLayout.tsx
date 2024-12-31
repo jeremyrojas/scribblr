@@ -1,11 +1,11 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Outlet } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Sidebar } from "./Sidebar";
 import { useAuth } from "@/lib/auth";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
+export function AppLayout() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -30,7 +30,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-auto p-8 bg-background">
           <div className="max-w-5xl mx-auto">
             <ErrorBoundary>
-              {children}
+              <Outlet />
             </ErrorBoundary>
           </div>
         </main>
