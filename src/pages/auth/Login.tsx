@@ -4,6 +4,7 @@ import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 export default function Login() {
   const { user, isLoading } = useAuth();
@@ -14,6 +15,19 @@ export default function Login() {
       navigate("/");
     }
   }, [user, isLoading, navigate]);
+
+  // Add error handling for auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'USER_SIGNUP_ERROR') {
+        toast.error("Please use a valid email address");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   if (isLoading) {
     return (
