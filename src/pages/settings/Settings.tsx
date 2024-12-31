@@ -103,7 +103,7 @@ export default function Settings() {
           <TableHeader>
             <TableRow>
               <TableHead>Username</TableHead>
-              <TableHead>Date Created</TableHead>
+              <TableHead>Date Created & Time</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

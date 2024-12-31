@@ -13,7 +13,14 @@ import ManagePosts from "./pages/posts/ManagePosts";
 import PublicPost from "./pages/posts/PublicPost";
 import Settings from "./pages/settings/Settings";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 1000 * 60,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -24,11 +31,18 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            {/* Public routes for viewing posts */}
             <Route path="/posts/view/:id" element={
               <PublicLayout>
                 <PublicPost />
               </PublicLayout>
             } />
+            <Route path="/posts/:id" element={
+              <PublicLayout>
+                <PublicPost />
+              </PublicLayout>
+            } />
+            {/* Protected admin routes */}
             <Route
               path="/"
               element={
@@ -46,7 +60,7 @@ const App = () => (
               }
             />
             <Route
-              path="/posts/:id"
+              path="/posts/edit/:id"
               element={
                 <AppLayout>
                   <PostEditor />
