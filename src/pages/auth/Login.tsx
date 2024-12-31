@@ -19,7 +19,7 @@ export default function Login() {
   // Add error handling for auth state changes
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'USER_SIGNUP_ERROR') {
+      if (event === 'SIGNED_OUT') {
         toast.error("Please use a valid email address");
       }
     });
