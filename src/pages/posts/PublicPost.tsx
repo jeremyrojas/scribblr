@@ -17,8 +17,7 @@ export default function PublicPost() {
         .from("posts")
         .select(`
           *,
-          author:profiles(username, id),
-          author_email:auth.users(email)
+          author:profiles(username, id, email)
         `)
         .eq("id", id)
         .maybeSingle();
@@ -71,7 +70,7 @@ export default function PublicPost() {
       )}
       <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
-        <span>By {post.author?.username} ({post.author_email?.[0]?.email})</span>
+        <span>By {post.author?.username}</span>
         <span>•</span>
         <time>
           {new Date(post.published_at || post.created_at).toLocaleDateString()}
