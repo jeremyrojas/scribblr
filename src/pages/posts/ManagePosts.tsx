@@ -24,6 +24,7 @@ interface Post {
 }
 
 const fetchPosts = async () => {
+  console.log("Fetching posts");
   const { data, error } = await supabase
     .from("posts")
     .select(`
@@ -36,7 +37,10 @@ const fetchPosts = async () => {
     `)
     .order("created_at", { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error("Error fetching posts:", error);
+    throw error;
+  }
   return data || [];
 };
 
@@ -47,13 +51,14 @@ export default function ManagePosts() {
     queryKey: ["posts"],
     queryFn: fetchPosts,
     staleTime: 1000 * 60,
-    retry: 2
+    retry: 1,
+    gcTime: 1000 * 60 * 5,
   });
 
   useEffect(() => {
     if (error) {
       console.error("Error fetching posts:", error);
-      toast.error("Failed to load posts");
+      toast.error("Failed to load posts. Please try again.");
     }
   }, [error]);
 

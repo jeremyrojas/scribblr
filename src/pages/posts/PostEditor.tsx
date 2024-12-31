@@ -1,143 +1,126 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ImagePlus, Save, Link as LinkIcon } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import { PostForm } from "@/components/posts/PostForm";
+import { Post } from "@/types/post";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function PostEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
-  const [post, setPost] = useState({
-    title: "",
-    content: "",
-    status: "draft",
-    photo_url: null as string | null,
-  });
 
-  useEffect(() => {
-    if (id) {
-      loadPost();
-    }
-  }, [id]);
+  // Fetch post data with proper error handling and timeout
+  const { data: post, isLoading, error } = useQuery({
+    queryKey: ["post", id],
+    queryFn: async () => {
+      console.log("Fetching post:", id);
+      if (!id) return {
+        title: "",
+        content: "",
+        status: "draft",
+        photo_url: null,
+      } as Post;
 
-  const handleCopyLink = () => {
-    const url = `${window.location.origin}/posts/view/${id}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Public link copied to clipboard");
-  };
-
-  const loadPost = async () => {
-    setLoading(true);
-    try {
       const { data, error } = await supabase
         .from("posts")
         .select("*")
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      if (data) {
-        setPost({
-          title: data.title,
-          content: data.content || "",
-          status: data.status || "draft",
-          photo_url: data.photo_url,
-        });
+      if (error) {
+        console.error("Error fetching post:", error);
+        throw error;
       }
-    } catch (error) {
-      console.error("Error loading post:", error);
-      toast.error("Failed to load post");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handlePublish = async () => {
-    await savePost("published");
-  };
+      return data as Post;
+    },
+    retry: 1,
+    staleTime: 1000 * 60, // 1 minute
+    gcTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-  const handleSave = async () => {
-    await savePost(post.status);
-  };
+  // Handle save mutation with proper error handling
+  const saveMutation = useMutation({
+    mutationFn: async (postData: Post) => {
+      console.log("Saving post:", postData);
+      if (!user) throw new Error("User not authenticated");
 
-  const savePost = async (status: string) => {
-    if (!user) {
-      toast.error("You must be logged in to save posts");
-      return;
-    }
-    setSaving(true);
-
-    try {
-      const postData = {
-        title: post.title,
-        content: post.content,
-        status,
-        photo_url: post.photo_url,
+      const postToSave = {
+        ...postData,
         author_id: user.id,
-        published_at: status === "published" ? new Date().toISOString() : null,
       };
 
       let response;
       if (id) {
         response = await supabase
           .from("posts")
-          .update(postData)
+          .update(postToSave)
           .eq("id", id);
       } else {
         response = await supabase
           .from("posts")
-          .insert([postData]);
+          .insert([postToSave]);
       }
 
       if (response.error) throw response.error;
-      
-      toast.success(status === "published" ? "Post published!" : "Post saved!");
-      if (!id) {
-        navigate("/posts");
-      }
-    } catch (error) {
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success(id ? "Post updated!" : "Post created!");
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      if (!id) navigate("/posts");
+    },
+    onError: (error) => {
       console.error("Error saving post:", error);
-      toast.error("Failed to save post");
-    } finally {
+      toast.error("Failed to save post. Please try again.");
+    },
+    onSettled: () => {
       setSaving(false);
     }
-  };
+  });
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // Handle publish mutation
+  const publishMutation = useMutation({
+    mutationFn: async () => {
+      console.log("Publishing post:", id);
+      if (!id || !user) throw new Error("Invalid operation");
 
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from('posts')
-        .upload(fileName, file);
+      const response = await supabase
+        .from("posts")
+        .update({
+          status: "published",
+          published_at: new Date().toISOString(),
+        })
+        .eq("id", id);
 
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('posts')
-        .getPublicUrl(fileName);
-
-      setPost(prev => ({ ...prev, photo_url: publicUrl }));
-      toast.success("Image uploaded successfully");
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      toast.error("Failed to upload image");
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Post published!");
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+    onError: (error) => {
+      console.error("Error publishing post:", error);
+      toast.error("Failed to publish post. Please try again.");
     }
-  };
+  });
 
-  if (loading) {
+  // Handle errors
+  useEffect(() => {
+    if (error) {
+      console.error("Error in PostEditor:", error);
+      toast.error("Failed to load post");
+      navigate("/posts");
+    }
+  }, [error, navigate]);
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
@@ -145,80 +128,29 @@ export default function PostEditor() {
     );
   }
 
+  const handleSave = async (postData: Post) => {
+    setSaving(true);
+    await saveMutation.mutateAsync(postData);
+  };
+
+  const handlePublish = async () => {
+    await publishMutation.mutateAsync();
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-semibold tracking-tight">
-          {id ? "Edit Post" : "Create New Post"}
-        </h1>
-        <div className="space-x-4">
-          {id && post.status === "published" && (
-            <Button onClick={handleCopyLink} variant="outline" size="sm">
-              <LinkIcon className="mr-2 h-4 w-4" />
-              Copy Public Link
-            </Button>
-          )}
-          {post.status === "draft" && (
-            <Button onClick={handlePublish} variant="outline" disabled={saving}>
-              Publish
-            </Button>
-          )}
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="mr-2 h-4 w-4" />
-            {saving ? "Saving..." : "Save"}
-          </Button>
-        </div>
-      </div>
-
-      <Card className="p-6 space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="title">Title</Label>
-          <Input
-            id="title"
-            value={post.title}
-            onChange={(e) => setPost(prev => ({ ...prev, title: e.target.value }))}
-            placeholder="Enter post title..."
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Featured Image</Label>
-          <div className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-              id="image-upload"
-            />
-            <label htmlFor="image-upload" className="cursor-pointer">
-              {post.photo_url ? (
-                <img
-                  src={post.photo_url}
-                  alt="Preview"
-                  className="max-h-48 mx-auto rounded"
-                />
-              ) : (
-                <div className="flex flex-col items-center text-muted-foreground">
-                  <ImagePlus className="h-12 w-12 mb-2" />
-                  <span>Click to upload image</span>
-                </div>
-              )}
-            </label>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="content">Content</Label>
-          <Textarea
-            id="content"
-            value={post.content}
-            onChange={(e) => setPost(prev => ({ ...prev, content: e.target.value }))}
-            placeholder="Write your post content..."
-            className="min-h-[300px]"
-          />
-        </div>
-      </Card>
+      <h1 className="text-3xl font-semibold tracking-tight">
+        {id ? "Edit Post" : "Create New Post"}
+      </h1>
+      
+      {post && (
+        <PostForm
+          post={post}
+          onSave={handleSave}
+          onPublish={handlePublish}
+          isLoading={saving || publishMutation.isPending}
+        />
+      )}
     </div>
   );
 }
