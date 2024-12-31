@@ -7,6 +7,7 @@ import { ImagePlus, Save, Link as LinkIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Post } from "@/types/post";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PostFormProps {
   post: Post;
