@@ -24,32 +24,34 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            
-            {/* All other routes use AppLayout */}
-            <Route element={<AppLayout>}>
-              <Route path="/" element={<Index />} />
-              <Route path="/posts/new" element={<PostEditor />} />
-              <Route path="/posts/edit/:id" element={<PostEditor />} />
-              <Route path="/posts" element={<ManagePosts />} />
-              <Route path="/posts/:id" element={<PublicPost />} />
-              <Route path="/posts/view/:id" element={<PublicPost />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              
+              {/* All other routes use AppLayout */}
+              <Route element={<AppLayout />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/posts/new" element={<PostEditor />} />
+                <Route path="/posts/edit/:id" element={<PostEditor />} />
+                <Route path="/posts" element={<ManagePosts />} />
+                <Route path="/posts/:id" element={<PublicPost />} />
+                <Route path="/posts/view/:id" element={<PublicPost />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
