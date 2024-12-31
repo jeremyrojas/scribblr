@@ -17,7 +17,7 @@ export default function PublicPost() {
         .from("posts")
         .select(`
           *,
-          author:profiles(username, id, email)
+          author:profiles(username, id)
         `)
         .eq("id", id)
         .maybeSingle();
